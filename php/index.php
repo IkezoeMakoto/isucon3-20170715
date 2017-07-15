@@ -13,18 +13,24 @@ function configure()
     $env = getenv('ISUCON_ENV');
     if (!$env) $env = 'local';
 
-    $file = realpath(__DIR__ . '/../config/' . $env . '.json');
-    $fh = fopen($file, 'r');
-    $config = json_decode(fread($fh, filesize($file)), true);
-    fclose($fh);
+    $config = [
+        'local' => [
+            'database' => [
+                'dbname'   => 'isucon',
+                'host'     => 'localhost',
+                'port'     => 3306,
+                'username' =>  'isucon',
+                'password' => ''
+            ]
+        ]
+    ];
 
     $db = null;
     try {
         $db = new PDO(
-            'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=' . $config['database']['dbname']
-,
-            $config['database']['username'],
-            $config['database']['password'],
+            'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=' . $config[$env]['database']['dbname'],
+            $config[$env]['database']['username'],
+            $config[$env]['database']['password'],
             array(
                 PDO::ATTR_PERSISTENT => true,
                 PDO::MYSQL_ATTR_INIT_COMMAND => 'SET CHARACTER SET `utf8`',
