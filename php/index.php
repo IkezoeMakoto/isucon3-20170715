@@ -239,7 +239,10 @@ dispatch_post('/memo', function() {
 
     $user = get('user');
     $content = $_POST["content"];
-    $is_private = $_POST["is_private"] != 0 ? 1 : 0;
+    $is_private = 0;
+    if (!empty($_POST['is_private'])) {
+        $is_private = 1;
+    }
 
     $stmt = $db->prepare('INSERT INTO memos (user, content, is_private, created_at) VALUES (:user, :content, :is_private, now())');
     $stmt->bindValue(':user', $user['id']);
