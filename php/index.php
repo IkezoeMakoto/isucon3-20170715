@@ -124,7 +124,7 @@ function markdown($content) {
 dispatch_get('/', function() {
     $db = option('db_conn');
 
-    $stmt = $db->prepare('SELECT count(*) AS total FROM memos WHERE is_private=0');
+    $stmt = $db->prepare('SELECT count(1) AS total FROM memos WHERE is_private=0');
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $total = $result["total"];
@@ -153,7 +153,7 @@ dispatch_get('/recent/:page', function(){
     $db = option('db_conn');
 
     $page = params('page');
-    $stmt = $db->prepare('SELECT count(*) AS total FROM memos WHERE is_private=0');
+    $stmt = $db->prepare('SELECT count(1) AS total FROM memos WHERE is_private=0');
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $total = $result["total"];
@@ -184,7 +184,9 @@ dispatch_get('/signin', function() {
 });
 
 dispatch_post('/signout', function() {
-    session_start();
+    if(!isset($_SESSION)){
+        session_start();
+    }
     session_regenerate_id(TRUE);
     unset($_SESSION['user_id']);
     unset($_SESSION['token']);

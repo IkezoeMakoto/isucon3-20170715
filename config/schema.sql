@@ -19,3 +19,8 @@ CREATE TABLE `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `users_username_idx` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+
+ALTER TABLE memos
+ADD INDEX is_private_created_at(is_private, created_at),
+ADD INDEX user(user),
+ADD INDEX user_is_private_created_at(user, is_private, created_at);
