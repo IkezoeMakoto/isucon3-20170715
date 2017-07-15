@@ -21,7 +21,7 @@ function configure()
     $db = null;
     try {
         $db = new PDO(
-            'mysql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname']
+            'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=' . $config['database']['dbname']
 ,
             $config['database']['username'],
             $config['database']['password'],
