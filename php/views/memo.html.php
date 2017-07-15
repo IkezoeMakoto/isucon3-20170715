@@ -20,5 +20,3 @@ Memo by <?php echo $memo['username'] ?> (<?php echo $memo['created_at'] ?>)
 <div id="content_html">
 <?php echo $memo['content_html'] ?>
 </div>
-
-

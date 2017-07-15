@@ -5,4 +5,3 @@ password <input type="password" name="password" size="20">
 <br>
 <input type="submit" value="signin">
 </form>
-
