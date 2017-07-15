@@ -158,18 +158,19 @@ dispatch_get('/recent/:page', function(){
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $total = $result["total"];
 
-    $stmt = $db->prepare("SELECT * FROM memos WHERE is_private=0 ORDER BY created_at DESC, id DESC LIMIT 100 OFFSET " . $page * 100);
+    $stmt = $db->prepare("SELECT m.id, m.content, u.username, m.created_at FROM memos m LEFT JOIN users u ON m.user = u.id WHERE m.is_private=0 ORDER BY m.created_at DESC, m.id DESC LIMIT 100 OFFSET " . $page * 100);
     $stmt->execute();
     $memos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    foreach($memos as &$memo) {
-        $stmt = $db->prepare('SELECT username FROM users WHERE id = :id');
-        $stmt->bindValue(':id', $memo["user"]);
-        $stmt->execute();
+//var_dump($memos);exit;
+//    foreach($memos as &$memo) {
+//        $stmt = $db->prepare('SELECT username FROM users WHERE id = :id');
+//        $stmt->bindValue(':id', $memo["user"]);
+//        $stmt->execute();
 
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $memo["username"] = $result["username"];
-    }
+//        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+//        $memo["username"] = $result["username"];
+//    }
 
     set('memos', $memos);
     set('page', $page);
