@@ -53,14 +53,3 @@ body {
 <script type="text/javascript" src="<?php echo uri_for('/js/bootstrap.min.js') ?>"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-

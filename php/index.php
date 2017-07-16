@@ -13,18 +13,24 @@ function configure()
     $env = getenv('ISUCON_ENV');
     if (!$env) $env = 'local';
 
-    $file = realpath(__DIR__ . '/../config/' . $env . '.json');
-    $fh = fopen($file, 'r');
-    $config = json_decode(fread($fh, filesize($file)), true);
-    fclose($fh);
+    $config = [
+        'local' => [
+            'database' => [
+                'dbname'   => 'isucon',
+                'host'     => 'localhost',
+                'port'     => 3306,
+                'username' =>  'isucon',
+                'password' => ''
+            ]
+        ]
+    ];
 
     $db = null;
     try {
         $db = new PDO(
-            'mysql:host=' . $config['database']['host'] . ';dbname=' . $config['database']['dbname']
-,
-            $config['database']['username'],
-            $config['database']['password'],
+            'mysql:unix_socket=/var/lib/mysql/mysql.sock;dbname=' . $config[$env]['database']['dbname'],
+            $config[$env]['database']['username'],
+            $config[$env]['database']['password'],
             array(
                 PDO::ATTR_PERSISTENT => true,
                 PDO::MYSQL_ATTR_INIT_COMMAND => 'SET CHARACTER SET `utf8`',
@@ -124,23 +130,14 @@ function markdown($content) {
 dispatch_get('/', function() {
     $db = option('db_conn');
 
-    $stmt = $db->prepare('SELECT count(*) AS total FROM memos WHERE is_private=0');
+    $stmt = $db->prepare('SELECT count(1) AS total FROM memos WHERE is_private=0');
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $total = $result["total"];
 
-    $stmt = $db->prepare('SELECT * FROM memos WHERE is_private=0 ORDER BY created_at DESC, id DESC LIMIT 100');
+    $stmt = $db->prepare('SELECT m.id, m.content, u.username, m.created_at FROM memos m LEFT JOIN users u ON m.user = u.id WHERE m.is_private=0 ORDER BY m.created_at DESC, m.id DESC LIMIT 100');
     $stmt->execute();
     $memos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach($memos as &$memo) {
-        $stmt = $db->prepare('SELECT username FROM users WHERE id = :id');
-        $stmt->bindValue(':id', $memo["user"]);
-        $stmt->execute();
-
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $memo["username"] = $result["username"];
-    }
 
     set('memos', $memos);
     set('page', 0);
@@ -153,23 +150,14 @@ dispatch_get('/recent/:page', function(){
     $db = option('db_conn');
 
     $page = params('page');
-    $stmt = $db->prepare('SELECT count(*) AS total FROM memos WHERE is_private=0');
+    $stmt = $db->prepare('SELECT count(1) AS total FROM memos WHERE is_private=0');
     $stmt->execute();
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     $total = $result["total"];
 
-    $stmt = $db->prepare("SELECT * FROM memos WHERE is_private=0 ORDER BY created_at DESC, id DESC LIMIT 100 OFFSET " . $page * 100);
+    $stmt = $db->prepare("SELECT m.id, m.content, u.username, m.created_at FROM memos m LEFT JOIN users u ON m.user = u.id WHERE m.is_private=0 ORDER BY m.created_at DESC, m.id DESC LIMIT 100 OFFSET " . $page * 100);
     $stmt->execute();
     $memos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach($memos as &$memo) {
-        $stmt = $db->prepare('SELECT username FROM users WHERE id = :id');
-        $stmt->bindValue(':id', $memo["user"]);
-        $stmt->execute();
-
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        $memo["username"] = $result["username"];
-    }
 
     set('memos', $memos);
     set('page', $page);
@@ -184,7 +172,9 @@ dispatch_get('/signin', function() {
 });
 
 dispatch_post('/signout', function() {
-    session_start();
+    if(!isset($_SESSION)){
+        session_start();
+    }
     session_regenerate_id(TRUE);
     unset($_SESSION['user_id']);
     unset($_SESSION['token']);
@@ -237,7 +227,10 @@ dispatch_post('/memo', function() {
 
     $user = get('user');
     $content = $_POST["content"];
-    $is_private = $_POST["is_private"] != 0 ? 1 : 0;
+    $is_private = 0;
+    if (!empty($_POST['is_private'])) {
+        $is_private = 1;
+    }
 
     $stmt = $db->prepare('INSERT INTO memos (user, content, is_private, created_at) VALUES (:user, :content, :is_private, now())');
     $stmt->bindValue(':user', $user['id']);
